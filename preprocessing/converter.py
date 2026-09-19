@@ -2,7 +2,7 @@ import os
 from pypdf import PdfReader
 from docx import Document
 import re
-
+from utils import preprocess
 
 def file_loader(folder_path):
     documents=[]
@@ -28,11 +28,12 @@ def file_loader(folder_path):
         if not text.strip():
             # print("no text found in:", filename)
             continue
+        tokens=preprocess(text)
 
         documents.append({
             "id": doc_id,
             "filename": filename,
-            "text": text,
+            "tokens": tokens,
         })
 
         doc_id+=1
@@ -57,3 +58,5 @@ def read_docx(path):
     for paragraph in doc.paragraphs:
         paragraphs_text.append(paragraph.text)
     return "\n".join(paragraphs_text)
+
+
