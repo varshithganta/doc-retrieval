@@ -2,7 +2,7 @@ import os
 from pypdf import PdfReader
 from docx import Document
 import re
-from utils import preprocess
+from .utils import preprocess
 
 def file_loader(folder_path):
     documents=[]
@@ -31,7 +31,7 @@ def file_loader(folder_path):
         tokens=preprocess(text)
 
         documents.append({
-            "id": doc_id,
+            "doc_id": doc_id,
             "filename": filename,
             "tokens": tokens,
         })
