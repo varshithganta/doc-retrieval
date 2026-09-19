@@ -1,7 +1,7 @@
 from preprocessing.converter import *
 from preprocessing.index import Index
 import argparse
-# import sys
+import sys
 import os 
 import json
 from ranking import *
@@ -57,12 +57,14 @@ query_tokens=preprocess(args.query)
 
 results=rank_tfidf(query_tokens,index, doc_length=doc_length,k=args.k)
 
-print("Completed ranking using the TFIDF. Results: ")
+
 
 if not results:
     print("No matching documents")
+    sys.exit(0)
+    
 rank=1
-
+print("Completed ranking using the TFIDF. Results: ")
 print("Query: ", args.query)
 for doc_id, score in results:
     print(f"{rank})  Doc_id: {doc_id}, Filename: {filenames[doc_id]}\n Score: {round(score, 3)}, ")
