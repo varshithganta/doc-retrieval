@@ -13,7 +13,7 @@ def file_loader(folder_path):
         full_path=os.path.join(folder_path, filename)
 
 
-        if not os.path.isfile(full_path):
+        if not os.path.isfile(full_path) or filename.startswith("~$"):
             continue
         text=""
         if(ext==".txt"):

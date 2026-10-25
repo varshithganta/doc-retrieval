@@ -1,3 +1,5 @@
+import math
+
 class Index:
     def __init__(self, docs: dict):
         """
@@ -9,18 +11,20 @@ class Index:
 
         doc_length={0:len of tokens, 1:len of tokens....}  
         
-
+        positions={ word1:{docid1:[positions of where it appears]}, word2:{...} }
     """
 
         self.index={}
+        self.positions={}
         self.doc_length={}
         self.docs=docs
         self.filenames={}
         self.index=self.make_index()
-
+        self.doc_norms = self.make_doc_norms()
 
     def make_index(self):
         index={}
+        positions={}
         for doc in self.docs:
             doc_id=doc["doc_id"]
             tokens=doc["tokens"]
@@ -28,22 +32,53 @@ class Index:
             self.filenames[doc_id]=doc["filename"]
             self.doc_length[doc_id]=len(tokens)
 
-            for token in tokens:
+            for position,token in enumerate(tokens):
                 if(token not in index):
                     index[token]={}
 
                 if doc_id not in index[token]:
                     index[token][doc_id]=0
-
+                                                
                 index[token][doc_id]+=1
-        return index
 
+                if token not in positions:
+                    positions[token]={}
+                if doc_id not in positions[token]:
+                    positions[token][doc_id]=[]
+                positions[token][doc_id].append(position)
+        
+        self.positions=positions
+        return index
+    
+    def make_doc_norms(self):
+        N = len(self.doc_length)
+        sums = {}                                    # doc_id -> sum of weight²
+        for word in self.index:
+            idf = math.log(N / len(self.index[word]))   # len(...) = number of docs containing the word
+            for doc_id, freq in self.index[word].items():
+                weight = freq * idf
+                if doc_id not in sums:
+                    sums[doc_id] = 0
+                sums[doc_id] += weight ** 2
+
+        norms = {}
+        for doc_id in sums:
+            norms[doc_id] = math.sqrt(sums[doc_id])
+        return norms
 ### Testing purposes
 if __name__ == "__main__":
-    docs = {
-        "doc1": ["quantum", "computing", "quantum"],
-        "doc2": ["classical", "computing"],
+    docs = [
+    {
+        "doc_id": 0,
+        "filename": "a.txt",
+        "tokens": ["quantum", "computing", "quantum"]
+    },
+    {
+        "doc_id": 1,
+        "filename": "b.txt",
+        "tokens": ["classical", "computing"]
     }
+    ]
     idx = Index(docs)
     print(idx.index)
     print(idx.doc_length)
