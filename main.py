@@ -8,22 +8,18 @@ from ranking import *
 from phrase import phrase_search
 
 cache_file="cache.json"
-def write_cache(index, positions,doc_length,filenames, path=cache_file):
+def write_cache(index, positions, doc_length, doc_norms, filenames, path=cache_file):
     with open(path, "w") as f:
-        json.dump({"index":index, 
+        json.dump({"index":index,
                    "positions":positions,
                    "doc_length":doc_length,
+                   "doc_norms":doc_norms,
                    "filenames":filenames},f)
 
 def read_cache(path=cache_file):
     with open(path, "r") as f:
         data=json.load(f)
-        index=data["index"]
-        positions=data["positions"]
-        doc_length=data["doc_length"]
-        filenames=data["filenames"]
-        return index, positions,doc_length,filenames
-
+        return data["index"], data["positions"], data["doc_length"], data["doc_norms"], data["filenames"]
 
 
 parser=argparse.ArgumentParser(description="Document Retreival")
@@ -45,14 +41,16 @@ if(args.rebuild or not os.path.exists(cache_file)):
     index1=Index(documents)
 
     index=index1.index
+    
     positions=index1.positions
     doc_length=index1.doc_length
+    doc_norms=index1.doc_norms
     filenames=index1.filenames
 
-    write_cache(index, positions,doc_length, filenames)
+    write_cache(index, positions,doc_length,doc_norms, filenames)
 
 else:
-    index,positions, doc_length,filenames=read_cache(cache_file)
+    index,positions, doc_length,doc_norms,filenames=read_cache(cache_file)
 
 if(args.k>len(doc_length)):
     raise ValueError("Value of K is larger than doc length")
@@ -69,9 +67,10 @@ if args.query.startswith('"') and args.query.endswith('"'):
         print(f"Doc_id: {doc_id}, Filename: {filenames[doc_id]}")
     exit()
 
-    
+
 tf_idf_results=rank_tfidf(query_tokens,index, doc_length=doc_length,k=args.k)
 bm25_results=rank_bm25(query_tokens, index, doc_length, k=args.k, k1=1.5, b=0.75)
+cosine_results=rank_cosine(query_tokens, index, doc_length, doc_norms, k=args.k)
 
 if not tf_idf_results:
     print("No matching documents")
@@ -97,8 +96,12 @@ for doc_id, score in bm25_results:
     print("")
     rank+=1
 
-for word in positions:
-    for doc_id in positions[word]:
-        assert len(positions[word][doc_id]) == index[word][doc_id], (word, doc_id)
-print("positions OK")
-print(positions.get("gojo"))
+print("\n-------------------------------------Cosine Results----------------------------------------------------------------")
+
+rank=1
+print("Completed ranking using Cosine Similarity. Results: ")
+print("Query: ", args.query)
+for doc_id, score in cosine_results:
+    print(f"{rank})  Doc_id: {doc_id}, Filename: {filenames[doc_id]}\n Score: {round(score, 3)}, ")
+    print("")
+    rank+=1
